@@ -1,0 +1,47 @@
+{
+  "name": "agent-link-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for bidirectional AI agent collaboration — spawn and communicate with any AI coding agent CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "agent-link-mcp": "dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "ai",
+    "agent",
+    "claude",
+    "codex",
+    "gemini",
+    "collaboration",
+    "model-context-protocol"
+  ],
+  "author": "mikusnuz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/agent-link-mcp"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}

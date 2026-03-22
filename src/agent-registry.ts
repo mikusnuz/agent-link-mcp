@@ -1,0 +1,128 @@
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+export interface AgentProfile {
+  command: string;
+  args: string[];
+  promptFlag: string | null;
+  outputFormat: 'text' | 'json';
+}
+
+export interface AgentInfo {
+  name: string;
+  command: string;
+  source: 'auto' | 'config';
+  available: boolean;
+}
+
+const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
+  claude: {
+    command: 'claude',
+    args: ['-p', '--output-format', 'json'],
+    promptFlag: null,
+    outputFormat: 'json',
+  },
+  codex: {
+    command: 'codex',
+    args: ['-q'],
+    promptFlag: null,
+    outputFormat: 'text',
+  },
+  gemini: {
+    command: 'gemini',
+    args: [],
+    promptFlag: null,
+    outputFormat: 'text',
+  },
+  aider: {
+    command: 'aider',
+    args: ['--message'],
+    promptFlag: '--message',
+    outputFormat: 'text',
+  },
+};
+
+interface ConfigFile {
+  agents?: Record<string, Partial<AgentProfile>>;
+}
+
+function resolvedConfigPath(): string {
+  const envPath = process.env['AGENT_LINK_CONFIG'];
+  if (envPath) {
+    return envPath;
+  }
+  return join(homedir(), '.agent-link', 'config.json');
+}
+
+function isWhichAvailable(command: string): boolean {
+  try {
+    execSync(`which ${command}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function detectAgents(): string[] {
+  return Object.keys(BUILT_IN_PROFILES).filter((name) => {
+    const profile = BUILT_IN_PROFILES[name];
+    return profile !== undefined && isWhichAvailable(profile.command);
+  });
+}
+
+export function loadConfig(): Record<string, AgentProfile> {
+  const configPath = resolvedConfigPath();
+  let configAgents: Record<string, Partial<AgentProfile>> = {};
+
+  try {
+    const raw = readFileSync(configPath, 'utf8');
+    const parsed = JSON.parse(raw) as ConfigFile;
+    if (parsed.agents && typeof parsed.agents === 'object') {
+      configAgents = parsed.agents;
+    }
+  } catch {
+    // config file missing or malformed — fall back to built-in profiles only
+  }
+
+  const merged: Record<string, AgentProfile> = { ...BUILT_IN_PROFILES };
+
+  for (const [name, overrides] of Object.entries(configAgents)) {
+    const base: AgentProfile = merged[name] ?? {
+      command: name,
+      args: [],
+      promptFlag: null,
+      outputFormat: 'text',
+    };
+
+    merged[name] = {
+      command: overrides.command ?? base.command,
+      args: overrides.args ?? base.args,
+      promptFlag: overrides.promptFlag !== undefined ? overrides.promptFlag : base.promptFlag,
+      outputFormat: overrides.outputFormat ?? base.outputFormat,
+    };
+  }
+
+  return merged;
+}
+
+export function getAgentProfile(name: string): AgentProfile | undefined {
+  const profiles = loadConfig();
+  return profiles[name];
+}
+
+export function listAgents(): AgentInfo[] {
+  const profiles = loadConfig();
+  const builtInNames = new Set(Object.keys(BUILT_IN_PROFILES));
+
+  return Object.entries(profiles).map(([name, profile]) => {
+    const source: 'auto' | 'config' = builtInNames.has(name) ? 'auto' : 'config';
+    return {
+      name,
+      command: profile.command,
+      source,
+      available: isWhichAvailable(profile.command),
+    };
+  });
+}
