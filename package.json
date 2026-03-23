@@ -1,6 +1,6 @@
 {
   "name": "agent-link-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for bidirectional AI agent collaboration — spawn and communicate with any AI coding agent CLI",
   "main": "dist/index.js",
   "bin": {

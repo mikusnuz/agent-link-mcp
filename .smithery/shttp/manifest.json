@@ -1,0 +1,223 @@
+{
+  "payload": {
+    "type": "hosted",
+    "stateful": false,
+    "hasAuthAdapter": false,
+    "serverCard": {
+      "serverInfo": {
+        "name": "agent-link-mcp",
+        "version": "0.2.0"
+      },
+      "tools": [
+        {
+          "name": "spawn_agent",
+          "description": "Spawn an AI agent to work on a task. Returns a question if the agent needs clarification, or a result when done.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agent": {
+                "type": "string",
+                "description": "Agent name (e.g. \"claude\", \"codex\", \"gemini\", \"aider\")"
+              },
+              "task": {
+                "type": "string",
+                "description": "Task description to send to the agent"
+              },
+              "context": {
+                "description": "Optional task context",
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "description": "Absolute file paths to include as context",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "intent": {
+                    "description": "High-level intent or goal behind the task",
+                    "type": "string"
+                  },
+                  "error": {
+                    "description": "Error message to include as context",
+                    "type": "string"
+                  }
+                }
+              },
+              "cwd": {
+                "description": "Working directory for the agent process",
+                "type": "string"
+              },
+              "timeoutMs": {
+                "description": "Timeout in milliseconds (default: 120000)",
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "agent",
+              "task"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false,
+            "openWorldHint": true
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "reply",
+          "description": "Reply to an agent that is waiting for clarification. Continues the conversation until the agent returns a result or asks another question.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agentId": {
+                "type": "string",
+                "description": "Session ID returned from spawn_agent"
+              },
+              "message": {
+                "type": "string",
+                "description": "Clarification or additional information to send to the agent"
+              }
+            },
+            "required": [
+              "agentId",
+              "message"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "kill_agent",
+          "description": "Terminate an active agent session and clean up its resources.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agentId": {
+                "type": "string",
+                "description": "Session ID of the agent to kill"
+              }
+            },
+            "required": [
+              "agentId"
+            ],
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": true
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "list_agents",
+          "description": "List all known agents and their availability on this system.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        },
+        {
+          "name": "get_status",
+          "description": "Get the status of all active agent sessions.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "$schema": "http://json-schema.org/draft-07/schema#"
+          },
+          "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+          },
+          "execution": {
+            "taskSupport": "forbidden"
+          }
+        }
+      ],
+      "resources": [
+        {
+          "name": "agents",
+          "uri": "agent-link://agents",
+          "description": "List of all configured agents and their availability",
+          "mimeType": "application/json"
+        },
+        {
+          "name": "config",
+          "uri": "agent-link://config",
+          "description": "Current agent-link configuration",
+          "mimeType": "application/json"
+        }
+      ],
+      "prompts": [
+        {
+          "name": "collaborate",
+          "description": "Generate a collaboration prompt for asking another agent for help",
+          "arguments": [
+            {
+              "name": "task",
+              "description": "The task or question to send to another agent",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "debug-with-agent",
+          "description": "Ask another agent to help debug an error",
+          "arguments": [
+            {
+              "name": "error",
+              "description": "The error message or stack trace",
+              "required": true
+            },
+            {
+              "name": "file",
+              "description": "File path where the error occurs",
+              "required": false
+            }
+          ]
+        },
+        {
+          "name": "code-review",
+          "description": "Request a code review from another agent",
+          "arguments": [
+            {
+              "name": "files",
+              "description": "Comma-separated file paths to review",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    "source": {
+      "commit": "e113ef7152808345cbe7ab3ddb77bba50222a900",
+      "branch": "main"
+    }
+  },
+  "artifacts": {
+    "module": "module.js",
+    "sourcemap": "module.js.map"
+  }
+}

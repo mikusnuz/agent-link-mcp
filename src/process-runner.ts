@@ -49,11 +49,14 @@ async function writeTempPrompt(prompt: string): Promise<string> {
   return tmpFile;
 }
 
-function buildArgs(profile: AgentProfile): string[] {
+function buildArgs(profile: AgentProfile, prompt: string): string[] {
   const args = [...profile.args];
 
-  if (profile.promptFlag !== null) {
-    args.push(profile.promptFlag);
+  if (profile.promptMode === 'arg') {
+    if (profile.promptFlag !== null) {
+      args.push(profile.promptFlag);
+    }
+    args.push(prompt);
   }
 
   return args;
@@ -66,7 +69,7 @@ export async function runAgent(
 ): Promise<RunResult> {
   const tmpFile = await writeTempPrompt(prompt);
 
-  const args = buildArgs(profile);
+  const args = buildArgs(profile, prompt);
 
   let child: ChildProcess;
 
@@ -83,8 +86,10 @@ export async function runAgent(
     );
   }
 
-  if (child.stdin) {
+  if (profile.promptMode === 'stdin' && child.stdin) {
     child.stdin.write(prompt, 'utf8');
+    child.stdin.end();
+  } else if (child.stdin) {
     child.stdin.end();
   }
 

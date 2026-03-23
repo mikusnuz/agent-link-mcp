@@ -7,7 +7,7 @@ import { readFileContents, buildInitialPrompt, type TaskContext } from '../promp
 import { runAgent } from '../process-runner.js';
 import { parseAgentOutput } from '../parser.js';
 
-const DEFAULT_TIMEOUT_MS = 120_000;
+const DEFAULT_TIMEOUT_MS = 600_000; // 10 minutes — thinking models (o3, o4) often need 3-5 min
 
 export function registerSpawnAgent(server: McpServer, sessionManager: SessionManager): void {
   server.tool(

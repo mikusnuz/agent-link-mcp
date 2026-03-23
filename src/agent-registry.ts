@@ -11,6 +11,7 @@ export interface AgentProfile {
   command: string;
   args: string[];
   promptFlag: string | null;
+  promptMode: 'stdin' | 'arg';
   outputFormat: 'text' | 'json';
 }
 
@@ -26,24 +27,28 @@ const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
     command: 'claude',
     args: ['-p', '--output-format', 'json'],
     promptFlag: null,
+    promptMode: 'stdin',
     outputFormat: 'json',
   },
   codex: {
     command: 'codex',
-    args: ['-q'],
+    args: ['exec'],
     promptFlag: null,
+    promptMode: 'arg',
     outputFormat: 'text',
   },
   gemini: {
     command: 'gemini',
     args: [],
     promptFlag: null,
+    promptMode: 'stdin',
     outputFormat: 'text',
   },
   aider: {
     command: 'aider',
-    args: ['--message'],
+    args: [],
     promptFlag: '--message',
+    promptMode: 'arg',
     outputFormat: 'text',
   },
 };
@@ -101,6 +106,7 @@ export function loadConfig(): Record<string, AgentProfile> {
       command: name,
       args: [],
       promptFlag: null,
+      promptMode: 'stdin',
       outputFormat: 'text',
     };
 
@@ -108,6 +114,7 @@ export function loadConfig(): Record<string, AgentProfile> {
       command: overrides.command ?? base.command,
       args: overrides.args ?? base.args,
       promptFlag: overrides.promptFlag !== undefined ? overrides.promptFlag : base.promptFlag,
+      promptMode: overrides.promptMode ?? base.promptMode,
       outputFormat: overrides.outputFormat ?? base.outputFormat,
     };
   }
