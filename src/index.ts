@@ -11,7 +11,7 @@ import { registerKillAgent } from './tools/kill-agent.js';
 import { registerListAgents } from './tools/list-agents.js';
 import { registerGetStatus } from './tools/get-status.js';
 
-const PKG_VERSION = '0.2.1';
+const PKG_VERSION = '0.2.2';
 
 async function main(): Promise<void> {
   detectAgents();
