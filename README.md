@@ -7,6 +7,8 @@
 
 MCP server for bidirectional AI agent collaboration. Spawn and communicate with any AI coding agent CLI — Claude Code, Codex, Gemini, Aider, and more.
 
+[![agent-link-mcp MCP server](https://glama.ai/mcp/servers/mikusnuz/agent-link-mcp/badges/card.svg)](https://glama.ai/mcp/servers/mikusnuz/agent-link-mcp)
+
 ## When to Use
 
 - **Stuck on a bug?** — Your agent tried twice and failed. Let it ask another agent for a fresh perspective.
