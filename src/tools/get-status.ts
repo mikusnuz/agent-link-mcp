@@ -6,6 +6,7 @@ export function registerGetStatus(server: McpServer, sessionManager: SessionMana
     'get_status',
     'Get the status of all active agent sessions.',
     {},
+    { readOnlyHint: true, destructiveHint: false },
     async () => {
       const sessions = sessionManager.getAllSessions();
 

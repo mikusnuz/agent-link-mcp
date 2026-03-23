@@ -9,6 +9,7 @@ export function registerKillAgent(server: McpServer, sessionManager: SessionMana
     {
       agentId: z.string().describe('Session ID of the agent to kill'),
     },
+    { readOnlyHint: false, destructiveHint: true },
     async (params) => {
       const { agentId } = params;
 
@@ -26,6 +27,7 @@ export function registerKillAgent(server: McpServer, sessionManager: SessionMana
               }),
             },
           ],
+          isError: true,
         };
       }
 

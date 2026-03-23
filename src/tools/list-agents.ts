@@ -6,6 +6,7 @@ export function registerListAgents(server: McpServer): void {
     'list_agents',
     'List all known agents and their availability on this system.',
     {},
+    { readOnlyHint: true, destructiveHint: false },
     async () => {
       const agents = listAgents();
 

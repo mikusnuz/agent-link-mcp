@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+export const SERVER_TITLE = 'Agent Link';
+export const SERVER_INSTRUCTIONS =
+  'Spawn and collaborate with other AI coding agents. Use spawn_agent to start a task, reply to answer questions, and kill_agent to abort.';
+
 export interface AgentProfile {
   command: string;
   args: string[];
@@ -56,9 +60,13 @@ function resolvedConfigPath(): string {
   return join(homedir(), '.agent-link', 'config.json');
 }
 
-function isWhichAvailable(command: string): boolean {
+function isCommandAvailable(command: string): boolean {
   try {
-    execSync(`which ${command}`, { stdio: 'ignore' });
+    if (process.platform === 'win32') {
+      execSync(`where ${command}`, { stdio: 'ignore' });
+    } else {
+      execSync(`command -v ${command}`, { stdio: 'ignore', shell: '/bin/sh' });
+    }
     return true;
   } catch {
     return false;
@@ -68,7 +76,7 @@ function isWhichAvailable(command: string): boolean {
 export function detectAgents(): string[] {
   return Object.keys(BUILT_IN_PROFILES).filter((name) => {
     const profile = BUILT_IN_PROFILES[name];
-    return profile !== undefined && isWhichAvailable(profile.command);
+    return profile !== undefined && isCommandAvailable(profile.command);
   });
 }
 
@@ -122,7 +130,7 @@ export function listAgents(): AgentInfo[] {
       name,
       command: profile.command,
       source,
-      available: isWhichAvailable(profile.command),
+      available: isCommandAvailable(profile.command),
     };
   });
 }

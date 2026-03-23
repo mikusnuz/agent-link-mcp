@@ -80,7 +80,7 @@ export class SessionManager {
         try {
           process.kill(session.pid, 'SIGTERM');
         } catch {
-          // 이미 종료된 프로세스는 무시
+          // already terminated, ignore
         }
       }
     }

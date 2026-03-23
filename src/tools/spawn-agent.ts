@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAgentProfile } from '../agent-registry.js';
@@ -31,8 +32,57 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
         .optional()
         .describe(`Timeout in milliseconds (default: ${DEFAULT_TIMEOUT_MS})`),
     },
+    { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     async (params) => {
-      const { agent, task, context, cwd, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+      const { agent, task, context, cwd: rawCwd, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+
+      let cwd: string | undefined;
+      if (rawCwd !== undefined) {
+        if (rawCwd.includes('..')) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: JSON.stringify({
+                  error: 'Invalid cwd: path traversal with ".." is not allowed.',
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+        try {
+          const stat = fs.statSync(rawCwd);
+          if (!stat.isDirectory()) {
+            return {
+              content: [
+                {
+                  type: 'text' as const,
+                  text: JSON.stringify({
+                    error: `Invalid cwd: "${rawCwd}" is not a directory.`,
+                  }),
+                },
+              ],
+              isError: true,
+            };
+          }
+          cwd = rawCwd;
+        } catch {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: JSON.stringify({
+                  error: `Invalid cwd: "${rawCwd}" does not exist.`,
+                }),
+              },
+            ],
+            isError: true,
+          };
+        }
+      } else {
+        cwd = process.cwd();
+      }
 
       const profile = getAgentProfile(agent);
       if (!profile) {
@@ -45,6 +95,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
               }),
             },
           ],
+          isError: true,
         };
       }
 
@@ -72,6 +123,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
                   }),
                 },
               ],
+              isError: true,
             };
           }
         }
@@ -94,6 +146,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
               }),
             },
           ],
+          isError: true,
         };
       }
 
@@ -110,6 +163,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
               }),
             },
           ],
+          isError: true,
         };
       }
 

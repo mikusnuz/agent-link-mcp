@@ -14,6 +14,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
       agentId: z.string().describe('Session ID returned from spawn_agent'),
       message: z.string().describe('Clarification or additional information to send to the agent'),
     },
+    { readOnlyHint: false, destructiveHint: false },
     async (params) => {
       const { agentId, message } = params;
 
@@ -29,6 +30,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
               }),
             },
           ],
+          isError: true,
         };
       }
 
@@ -44,6 +46,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
               }),
             },
           ],
+          isError: true,
         };
       }
 
@@ -65,6 +68,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
               }),
             },
           ],
+          isError: true,
         };
       }
 
@@ -85,6 +89,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
               }),
             },
           ],
+          isError: true,
         };
       }
 
@@ -100,6 +105,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
               }),
             },
           ],
+          isError: true,
         };
       }
 
