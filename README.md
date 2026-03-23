@@ -14,6 +14,19 @@ AI coding agents get stuck sometimes. Instead of waiting for you, they can ask a
 - **Any agent** — works with any CLI that accepts a prompt and returns text. Built-in profiles for Claude, Codex, Gemini, and Aider.
 - **Multi-agent** — spawn multiple agents simultaneously for parallel collaboration.
 
+## Prerequisites
+
+agent-link-mcp spawns other AI agents as CLI subprocesses. **You need to install and authenticate the agent CLIs you want to collaborate with:**
+
+| Agent | Install | Auth |
+|-------|---------|------|
+| Claude Code | `npm install -g @anthropic-ai/claude-code` | `claude login` |
+| Codex | `npm install -g @openai/codex` | `codex login` |
+| Gemini CLI | `npm install -g @anthropic-ai/gemini-cli` | `gemini login` |
+| Aider | `pip install aider-chat` | Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` |
+
+You only need the ones you plan to use. agent-link-mcp auto-detects which CLIs are installed.
+
 ## Install
 
 ```bash
@@ -26,6 +39,8 @@ codex mcp add agent-link npx agent-link-mcp
 # Any MCP client
 npx agent-link-mcp
 ```
+
+> **Note:** Only the agent you're working in needs this MCP server installed. The other agents are spawned as subprocesses — they don't need agent-link-mcp.
 
 ## Tools
 
