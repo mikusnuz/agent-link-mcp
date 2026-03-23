@@ -3,7 +3,74 @@
 [![npm version](https://img.shields.io/npm/v/agent-link-mcp.svg)](https://www.npmjs.com/package/agent-link-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**English** | [한국어](README.ko.md)
+
 MCP server for bidirectional AI agent collaboration. Spawn and communicate with any AI coding agent CLI — Claude Code, Codex, Gemini, Aider, and more.
+
+## When to Use
+
+- **Stuck on a bug?** — Your agent tried twice and failed. Let it ask another agent for a fresh perspective.
+- **Need a second opinion?** — Get code review or architectural advice from a different AI model.
+- **Cross-model strengths** — Use Claude for planning, Codex for execution, Gemini for research.
+- **Parallel work** — Spawn multiple agents to tackle independent subtasks simultaneously.
+- **Rubber duck debugging** — Have one agent explain the problem to another and get back a solution.
+
+## Use Cases
+
+### Get Help When Stuck
+
+Your primary agent keeps failing on the same issue? Ask another agent:
+
+```
+# Claude Code is stuck on a TypeScript error it can't resolve.
+# It spawns Codex for a second opinion:
+
+spawn_agent("codex", "This TypeScript error keeps appearing. How do I fix it?", {
+  error: "Type 'string' is not assignable to type 'number'",
+  files: ["src/utils.ts"]
+})
+```
+
+### Cross-Agent Code Review
+
+Have another model review your agent's code changes:
+
+```
+spawn_agent("claude", "Review these changes for bugs and edge cases", {
+  files: ["src/api.ts", "src/handler.ts"],
+  intent: "Code review before merge"
+})
+```
+
+### Multi-Agent Pipeline
+
+Build a pipeline where agents handle different stages:
+
+```
+# Agent 1: Research
+spawn_agent("gemini", "Find the best approach for WebSocket reconnection")
+
+# Agent 2: Implementation (using Agent 1's advice)
+spawn_agent("codex", "Implement WebSocket reconnection with exponential backoff", {
+  files: ["src/ws-client.ts"]
+})
+
+# Agent 3: Review
+spawn_agent("claude", "Review this implementation for production readiness", {
+  files: ["src/ws-client.ts"]
+})
+```
+
+### Bidirectional Collaboration
+
+Agents can ask questions back. The host answers, and work continues:
+
+```
+Host: spawn_agent("codex", "Add caching to the API layer")
+Codex: [QUESTION] Should I use Redis or in-memory cache?
+Host: reply("codex-a1b2c3", "Use Redis, we have it in our docker-compose")
+Codex: [RESULT] Added Redis caching with 5-minute TTL...
+```
 
 ## Why
 

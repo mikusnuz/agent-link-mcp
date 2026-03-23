@@ -1,0 +1,15 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      AGENT_LINK_CONFIG:
+        type: string
+        description: "Optional path to custom agent config file (default: ~/.agent-link/config.json)"
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'agent-link-mcp'],
+      env: config.AGENT_LINK_CONFIG ? { AGENT_LINK_CONFIG: config.AGENT_LINK_CONFIG } : {}
+    })

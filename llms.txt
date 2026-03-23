@@ -1,0 +1,47 @@
+# agent-link-mcp
+
+MCP server for bidirectional AI agent collaboration. Lets any MCP-compatible agent spawn and communicate with other AI coding agent CLIs.
+
+## Tools
+
+### spawn_agent
+Spawn an AI agent CLI (claude, codex, gemini, aider, or custom) to work on a task. Accepts task description, file context, error messages, and working directory. Returns the agent's result or a question if clarification is needed.
+
+### reply
+Continue a conversation with a spawned agent that asked a question. Send your answer and get back the next response.
+
+### kill_agent
+Abort a running agent session by ID.
+
+### list_agents
+List all configured agent CLIs and their availability on the system. Auto-detects installed CLIs.
+
+### get_status
+Get status of all active agent sessions including conversation history and process info.
+
+## Prompts
+
+### collaborate
+Generate a prompt for asking another agent for help with any task.
+
+### debug-with-agent
+Ask another agent to help debug an error with file context.
+
+### code-review
+Request a code review from another agent on specified files.
+
+## Resources
+
+### agent-link://agents
+JSON list of all configured agents and their availability.
+
+### agent-link://config
+Current agent-link configuration and profiles.
+
+## When to Use
+
+- You've tried to fix a bug twice and keep failing — ask another agent for a fresh perspective
+- You want a code review from a different AI model before merging
+- You need to leverage different model strengths (Claude for planning, Codex for execution, Gemini for research)
+- You want to parallelize independent subtasks across multiple agents
+- You need rubber-duck debugging — explain the problem to another agent and get a solution back

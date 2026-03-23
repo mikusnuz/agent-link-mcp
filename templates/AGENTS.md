@@ -1,0 +1,19 @@
+# Agent Collaboration (agent-link-mcp)
+
+## Rules
+
+- When you fail to solve the same issue twice, use the `spawn_agent` MCP tool to ask another agent for help.
+- Pass error messages, relevant files, and intent as context.
+- Use `list_agents` to check which agents are available before spawning.
+- If a spawned agent asks a question, answer it with the `reply` tool.
+- For code reviews, spawn a different model than yourself for diverse feedback.
+
+## Available Tools
+
+| Tool | Purpose |
+|------|---------|
+| `spawn_agent` | Start a task on another agent CLI |
+| `reply` | Answer a spawned agent's question |
+| `kill_agent` | Abort a running session |
+| `list_agents` | List available agent CLIs |
+| `get_status` | Check active sessions |

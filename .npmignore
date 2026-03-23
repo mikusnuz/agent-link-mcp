@@ -1,0 +1,10 @@
+src/
+tests/
+tsconfig.json
+smithery.yaml
+.github/
+.gitignore
+CHANGELOG.md
+docs/
+*.test.ts
+*.test.js
