@@ -136,6 +136,7 @@ Spawn an agent and send it a task.
 | `context` | object | — | Optional `{ files, error, intent }` |
 | `cwd` | string | cwd | Working directory for the agent process |
 | `model` | string | — | Model to use (e.g. `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). Passed via `--model` flag. |
+| `thinking` | string | — | Thinking/reasoning depth (`"low"`, `"medium"`, `"high"`, `"max"`). Claude: `--effort`, Codex: `-c reasoning_effort`, Aider: `--reasoning-effort`. |
 | `timeoutMs` | number | 3600000 | Timeout in ms. Default: **1 hour**. |
 
 Returns one of:
@@ -267,6 +268,26 @@ spawn_agent("claude", "Review this code", { model: "claude-sonnet-4" })
 ```
 
 The model name is passed to the agent CLI via its `--model` flag. If omitted, the agent uses its default model.
+
+## Thinking / Reasoning Depth
+
+Control how deeply the agent reasons with the `thinking` parameter:
+
+```
+# High reasoning for complex debugging
+spawn_agent("codex", "Debug this race condition", { thinking: "high" })
+
+# Max effort for Claude
+spawn_agent("claude", "Architect a new auth system", { thinking: "max" })
+```
+
+| Agent | Flag | Values |
+|-------|------|--------|
+| Claude | `--effort` | `low`, `medium`, `high`, `max` |
+| Codex | `-c reasoning_effort` | `low`, `medium`, `high` |
+| Aider | `--reasoning-effort` | `low`, `medium`, `high` |
+
+If omitted, the agent uses its default reasoning level.
 
 ## Timeout
 

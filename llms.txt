@@ -13,6 +13,7 @@ Parameters:
 - context: Optional { files, error, intent }
 - cwd: Working directory for the agent process
 - model: Model to use (e.g. "o3", "gpt-5.4", "claude-sonnet-4", "gemini-2.5-pro"). Passed via --model flag.
+- thinking: Thinking/reasoning depth ("low", "medium", "high", "max"). Claude uses --effort, Codex uses -c reasoning_effort, Aider uses --reasoning-effort.
 - timeoutMs: Timeout in ms. Default: 3600000 (1 hour).
 
 ### reply

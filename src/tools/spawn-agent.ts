@@ -26,6 +26,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
         .describe('Optional task context'),
       cwd: z.string().optional().describe('Working directory for the agent process'),
       model: z.string().optional().describe('Model to use (e.g. "o3", "gpt-5.4", "claude-sonnet-4", "gemini-2.5-pro"). Passed via --model flag to the agent CLI.'),
+      thinking: z.string().optional().describe('Thinking/reasoning depth level (e.g. "low", "medium", "high", "max"). Controls how deeply the agent reasons. Claude uses --effort, Codex uses -c reasoning_effort, Aider uses --reasoning-effort.'),
       timeoutMs: z
         .number()
         .int()
@@ -35,7 +36,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
     },
     { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     async (params) => {
-      const { agent, task, context, cwd: rawCwd, model, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+      const { agent, task, context, cwd: rawCwd, model, thinking, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
 
       let cwd: string | undefined;
       if (rawCwd !== undefined) {
@@ -100,7 +101,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
         };
       }
 
-      const session = sessionManager.createSession(agent, timeoutMs, model);
+      const session = sessionManager.createSession(agent, timeoutMs, model, thinking);
 
       let taskContext: TaskContext = {};
 
@@ -134,7 +135,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
 
       let result;
       try {
-        result = await runAgent(profile, prompt, { cwd, timeoutMs, model });
+        result = await runAgent(profile, prompt, { cwd, timeoutMs, model, thinking });
       } catch (err) {
         sessionManager.updateStatus(session.agentId, 'error');
         sessionManager.removeSession(session.agentId);

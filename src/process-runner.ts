@@ -9,6 +9,7 @@ export interface RunOptions {
   cwd?: string;
   timeoutMs: number;
   model?: string;
+  thinking?: string;
 }
 
 export interface RunResult {
@@ -50,11 +51,21 @@ async function writeTempPrompt(prompt: string): Promise<string> {
   return tmpFile;
 }
 
-function buildArgs(profile: AgentProfile, prompt: string, model?: string): string[] {
+function buildArgs(profile: AgentProfile, prompt: string, model?: string, thinking?: string): string[] {
   const args = [...profile.args];
 
   if (model && profile.modelFlag) {
     args.push(profile.modelFlag, model);
+  }
+
+  if (thinking && profile.thinkingFlag) {
+    if (profile.thinkingFormat === 'config') {
+      // codex style: -c reasoning_effort="high"
+      args.push('-c', `${profile.thinkingFlag}="${thinking}"`);
+    } else {
+      // flag style: --effort high
+      args.push(profile.thinkingFlag, thinking);
+    }
   }
 
   if (profile.promptMode === 'arg') {
@@ -74,7 +85,7 @@ export async function runAgent(
 ): Promise<RunResult> {
   const tmpFile = await writeTempPrompt(prompt);
 
-  const args = buildArgs(profile, prompt, options.model);
+  const args = buildArgs(profile, prompt, options.model, options.thinking);
 
   let child: ChildProcess;
 

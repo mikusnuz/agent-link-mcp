@@ -136,6 +136,7 @@ npx agent-link-mcp
 | `context` | object | — | 선택 `{ files, error, intent }` |
 | `cwd` | string | cwd | 에이전트 프로세스의 작업 디렉토리 |
 | `model` | string | — | 사용할 모델 (예: `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). `--model` 플래그로 전달됩니다. |
+| `thinking` | string | — | 사고 깊이 (`"low"`, `"medium"`, `"high"`, `"max"`). Claude: `--effort`, Codex: `-c reasoning_effort`, Aider: `--reasoning-effort`. |
 | `timeoutMs` | number | 3600000 | 타임아웃 (ms). 기본값: **1시간**. |
 
 반환값:
@@ -267,6 +268,26 @@ spawn_agent("claude", "Review this code", { model: "claude-sonnet-4" })
 ```
 
 모델 이름은 에이전트 CLI의 `--model` 플래그로 전달됩니다. 생략하면 에이전트의 기본 모델이 사용됩니다.
+
+## 사고 깊이 (Thinking / Reasoning)
+
+`thinking` 파라미터로 에이전트의 사고 깊이를 제어할 수 있습니다:
+
+```
+# 복잡한 디버깅에 높은 사고 깊이
+spawn_agent("codex", "Debug this race condition", { thinking: "high" })
+
+# Claude에 최대 사고 깊이
+spawn_agent("claude", "Architect a new auth system", { thinking: "max" })
+```
+
+| 에이전트 | 플래그 | 값 |
+|---------|-------|-----|
+| Claude | `--effort` | `low`, `medium`, `high`, `max` |
+| Codex | `-c reasoning_effort` | `low`, `medium`, `high` |
+| Aider | `--reasoning-effort` | `low`, `medium`, `high` |
+
+생략하면 에이전트의 기본 사고 수준이 사용됩니다.
 
 ## 타임아웃
 

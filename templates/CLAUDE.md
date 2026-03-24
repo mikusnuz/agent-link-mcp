@@ -8,6 +8,7 @@
 - If a spawned agent asks a question (`[QUESTION]`), answer it with `reply`.
 - For code reviews, spawn a different model than yourself for diverse feedback.
 - Use the `model` parameter to specify which model the agent should use (e.g. `"o3"`, `"gpt-5.4"`).
+- Use the `thinking` parameter to control reasoning depth (`"low"`, `"medium"`, `"high"`, `"max"`).
 - Default timeout is 1 hour. For complex tasks, increase with `timeoutMs`.
 
 ## Examples
