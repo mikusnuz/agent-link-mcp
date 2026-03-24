@@ -5,7 +5,15 @@ MCP server for bidirectional AI agent collaboration. Lets any MCP-compatible age
 ## Tools
 
 ### spawn_agent
-Spawn an AI agent CLI (claude, codex, gemini, aider, or custom) to work on a task. Accepts task description, file context, error messages, and working directory. Returns the agent's result or a question if clarification is needed.
+Spawn an AI agent CLI (claude, codex, gemini, aider, or custom) to work on a task. Accepts task description, file context, error messages, working directory, and model selection. Returns the agent's result or a question if clarification is needed. Default timeout: 1 hour.
+
+Parameters:
+- agent (required): Agent name ("claude", "codex", "gemini", "aider")
+- task (required): Task description
+- context: Optional { files, error, intent }
+- cwd: Working directory for the agent process
+- model: Model to use (e.g. "o3", "gpt-5.4", "claude-sonnet-4", "gemini-2.5-pro"). Passed via --model flag.
+- timeoutMs: Timeout in ms. Default: 3600000 (1 hour).
 
 ### reply
 Continue a conversation with a spawned agent that asked a question. Send your answer and get back the next response.
@@ -45,3 +53,4 @@ Current agent-link configuration and profiles.
 - You need to leverage different model strengths (Claude for planning, Codex for execution, Gemini for research)
 - You want to parallelize independent subtasks across multiple agents
 - You need rubber-duck debugging — explain the problem to another agent and get a solution back
+- You want to use a specific model (e.g. o3, gpt-5.4) for a task via the model parameter

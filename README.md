@@ -124,15 +124,24 @@ Spawn an agent and send it a task.
     "error": "TypeError: Cannot read property 'x' of undefined",
     "intent": "Performance improvement"
   },
-  "timeout": 1800
+  "model": "o3",
+  "timeoutMs": 7200000
 }
 ```
 
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `agent` | string | *required* | Agent name (`"claude"`, `"codex"`, `"gemini"`, `"aider"`) |
+| `task` | string | *required* | Task description |
+| `context` | object | — | Optional `{ files, error, intent }` |
+| `cwd` | string | cwd | Working directory for the agent process |
+| `model` | string | — | Model to use (e.g. `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). Passed via `--model` flag. |
+| `timeoutMs` | number | 3600000 | Timeout in ms. Default: **1 hour**. |
+
 Returns one of:
-- `{ type: "question", agentId: "codex-a1b2c3", message: "..." }` — agent needs clarification
-- `{ type: "result", agentId: "codex-a1b2c3", message: "..." }` — task completed
-- `{ type: "error", agentId: "codex-a1b2c3", message: "..." }` — something went wrong
-- `{ type: "timeout", agentId: "codex-a1b2c3" }` — timed out
+- `{ status: "done", agentId: "codex-a1b2c3", result: "..." }` — task completed
+- `{ status: "waiting_for_reply", agentId: "codex-a1b2c3", question: "..." }` — agent needs clarification
+- `{ error: "...", agentId: "codex-a1b2c3" }` — something went wrong
 
 ### `reply`
 
@@ -244,6 +253,29 @@ Add custom agents via config file at `~/.agent-link/config.json`:
 ```
 
 Override config path with `AGENT_LINK_CONFIG` environment variable.
+
+## Model Selection
+
+You can specify which model the spawned agent should use via the `model` parameter:
+
+```
+# Use a specific model for Codex
+spawn_agent("codex", "Debug this issue", { model: "o3" })
+
+# Use a specific model for Claude
+spawn_agent("claude", "Review this code", { model: "claude-sonnet-4" })
+```
+
+The model name is passed to the agent CLI via its `--model` flag. If omitted, the agent uses its default model.
+
+## Timeout
+
+Default timeout is **1 hour** (3,600,000ms). You can override per-call:
+
+```
+# 2 hour timeout for complex tasks
+spawn_agent("codex", "Refactor the entire auth system", { timeoutMs: 7200000 })
+```
 
 ## Conversation Protocol
 

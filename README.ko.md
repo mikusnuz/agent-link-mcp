@@ -124,15 +124,24 @@ npx agent-link-mcp
     "error": "TypeError: Cannot read property 'x' of undefined",
     "intent": "Performance improvement"
   },
-  "timeout": 1800
+  "model": "o3",
+  "timeoutMs": 7200000
 }
 ```
 
+| 파라미터 | 타입 | 기본값 | 설명 |
+|---------|------|-------|------|
+| `agent` | string | *필수* | 에이전트 이름 (`"claude"`, `"codex"`, `"gemini"`, `"aider"`) |
+| `task` | string | *필수* | 작업 설명 |
+| `context` | object | — | 선택 `{ files, error, intent }` |
+| `cwd` | string | cwd | 에이전트 프로세스의 작업 디렉토리 |
+| `model` | string | — | 사용할 모델 (예: `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). `--model` 플래그로 전달됩니다. |
+| `timeoutMs` | number | 3600000 | 타임아웃 (ms). 기본값: **1시간**. |
+
 반환값:
-- `{ type: "question", agentId: "codex-a1b2c3", message: "..." }` — 에이전트가 추가 정보를 요청함
-- `{ type: "result", agentId: "codex-a1b2c3", message: "..." }` — 작업 완료
-- `{ type: "error", agentId: "codex-a1b2c3", message: "..." }` — 오류 발생
-- `{ type: "timeout", agentId: "codex-a1b2c3" }` — 타임아웃
+- `{ status: "done", agentId: "codex-a1b2c3", result: "..." }` — 작업 완료
+- `{ status: "waiting_for_reply", agentId: "codex-a1b2c3", question: "..." }` — 에이전트가 추가 정보를 요청함
+- `{ error: "...", agentId: "codex-a1b2c3" }` — 오류 발생
 
 ### `reply`
 
@@ -244,6 +253,29 @@ agent-link-mcp는 설치된 에이전트 CLI를 자동으로 감지합니다:
 ```
 
 `AGENT_LINK_CONFIG` 환경변수로 설정 파일 경로를 재정의할 수 있습니다.
+
+## 모델 선택
+
+`model` 파라미터로 생성된 에이전트가 사용할 모델을 지정할 수 있습니다:
+
+```
+# Codex에 특정 모델 지정
+spawn_agent("codex", "Debug this issue", { model: "o3" })
+
+# Claude에 특정 모델 지정
+spawn_agent("claude", "Review this code", { model: "claude-sonnet-4" })
+```
+
+모델 이름은 에이전트 CLI의 `--model` 플래그로 전달됩니다. 생략하면 에이전트의 기본 모델이 사용됩니다.
+
+## 타임아웃
+
+기본 타임아웃은 **1시간** (3,600,000ms)입니다. 호출별로 재정의할 수 있습니다:
+
+```
+# 복잡한 작업을 위한 2시간 타임아웃
+spawn_agent("codex", "Refactor the entire auth system", { timeoutMs: 7200000 })
+```
 
 ## 대화 프로토콜
 
