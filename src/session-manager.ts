@@ -9,12 +9,13 @@ export interface Session {
   startedAt: Date;
   pid?: number;
   timeout: number;
+  model?: string;
 }
 
 export class SessionManager {
   private sessions: Map<string, Session> = new Map();
 
-  createSession(agent: string, timeout: number): Session {
+  createSession(agent: string, timeout: number, model?: string): Session {
     const agentId = `${agent}-${randomBytes(3).toString('hex')}`;
     const session: Session = {
       agentId,
@@ -23,6 +24,7 @@ export class SessionManager {
       conversation: [],
       startedAt: new Date(),
       timeout,
+      model,
     };
     this.sessions.set(agentId, session);
     return session;

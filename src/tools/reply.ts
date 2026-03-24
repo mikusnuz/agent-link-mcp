@@ -76,7 +76,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
 
       let result;
       try {
-        result = await runAgent(profile, prompt, { timeoutMs: session.timeout });
+        result = await runAgent(profile, prompt, { timeoutMs: session.timeout, model: session.model });
       } catch (err) {
         sessionManager.updateStatus(agentId, 'error');
         return {

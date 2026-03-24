@@ -25,6 +25,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
         .optional()
         .describe('Optional task context'),
       cwd: z.string().optional().describe('Working directory for the agent process'),
+      model: z.string().optional().describe('Model to use (e.g. "o3", "gpt-5.4", "claude-sonnet-4", "gemini-2.5-pro"). Passed via --model flag to the agent CLI.'),
       timeoutMs: z
         .number()
         .int()
@@ -34,7 +35,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
     },
     { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     async (params) => {
-      const { agent, task, context, cwd: rawCwd, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+      const { agent, task, context, cwd: rawCwd, model, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
 
       let cwd: string | undefined;
       if (rawCwd !== undefined) {
@@ -99,7 +100,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
         };
       }
 
-      const session = sessionManager.createSession(agent, timeoutMs);
+      const session = sessionManager.createSession(agent, timeoutMs, model);
 
       let taskContext: TaskContext = {};
 
@@ -133,7 +134,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
 
       let result;
       try {
-        result = await runAgent(profile, prompt, { cwd, timeoutMs });
+        result = await runAgent(profile, prompt, { cwd, timeoutMs, model });
       } catch (err) {
         sessionManager.updateStatus(session.agentId, 'error');
         sessionManager.removeSession(session.agentId);

@@ -13,6 +13,7 @@ export interface AgentProfile {
   promptFlag: string | null;
   promptMode: 'stdin' | 'arg';
   outputFormat: 'text' | 'json';
+  modelFlag: string | null;
 }
 
 export interface AgentInfo {
@@ -29,6 +30,7 @@ const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
     promptFlag: null,
     promptMode: 'stdin',
     outputFormat: 'json',
+    modelFlag: '--model',
   },
   codex: {
     command: 'codex',
@@ -36,6 +38,7 @@ const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
     promptFlag: null,
     promptMode: 'arg',
     outputFormat: 'text',
+    modelFlag: '--model',
   },
   gemini: {
     command: 'gemini',
@@ -43,6 +46,7 @@ const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
     promptFlag: null,
     promptMode: 'stdin',
     outputFormat: 'text',
+    modelFlag: '--model',
   },
   aider: {
     command: 'aider',
@@ -50,6 +54,7 @@ const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
     promptFlag: '--message',
     promptMode: 'arg',
     outputFormat: 'text',
+    modelFlag: '--model',
   },
 };
 
@@ -108,6 +113,7 @@ export function loadConfig(): Record<string, AgentProfile> {
       promptFlag: null,
       promptMode: 'stdin',
       outputFormat: 'text',
+      modelFlag: null,
     };
 
     merged[name] = {
@@ -116,6 +122,7 @@ export function loadConfig(): Record<string, AgentProfile> {
       promptFlag: overrides.promptFlag !== undefined ? overrides.promptFlag : base.promptFlag,
       promptMode: overrides.promptMode ?? base.promptMode,
       outputFormat: overrides.outputFormat ?? base.outputFormat,
+      modelFlag: overrides.modelFlag !== undefined ? overrides.modelFlag : base.modelFlag,
     };
   }
 

@@ -8,6 +8,7 @@ import { AgentProfile } from './agent-registry.js';
 export interface RunOptions {
   cwd?: string;
   timeoutMs: number;
+  model?: string;
 }
 
 export interface RunResult {
@@ -49,8 +50,12 @@ async function writeTempPrompt(prompt: string): Promise<string> {
   return tmpFile;
 }
 
-function buildArgs(profile: AgentProfile, prompt: string): string[] {
+function buildArgs(profile: AgentProfile, prompt: string, model?: string): string[] {
   const args = [...profile.args];
+
+  if (model && profile.modelFlag) {
+    args.push(profile.modelFlag, model);
+  }
 
   if (profile.promptMode === 'arg') {
     if (profile.promptFlag !== null) {
@@ -69,7 +74,7 @@ export async function runAgent(
 ): Promise<RunResult> {
   const tmpFile = await writeTempPrompt(prompt);
 
-  const args = buildArgs(profile, prompt);
+  const args = buildArgs(profile, prompt, options.model);
 
   let child: ChildProcess;
 
