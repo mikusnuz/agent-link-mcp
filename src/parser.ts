@@ -11,21 +11,25 @@ export function stripAnsi(text: string): string {
 
 export function parseAgentOutput(output: string): ParsedResponse {
   const cleaned = stripAnsi(output);
-  const lines = cleaned.split('\n');
 
-  for (const line of lines) {
-    const trimmed = line.trimStart();
+  // Find the first [QUESTION] or [RESULT] tag and return everything after it
+  const questionIdx = cleaned.indexOf('[QUESTION]');
+  const resultIdx = cleaned.indexOf('[RESULT]');
 
-    if (trimmed.startsWith('[QUESTION]')) {
-      const message = trimmed.slice('[QUESTION]'.length).trimStart();
-      return { type: 'question', message };
-    }
+  // Determine which tag comes first
+  const hasQuestion = questionIdx !== -1;
+  const hasResult = resultIdx !== -1;
 
-    if (trimmed.startsWith('[RESULT]')) {
-      const message = trimmed.slice('[RESULT]'.length).trimStart();
-      return { type: 'result', message };
-    }
+  if (hasQuestion && (!hasResult || questionIdx < resultIdx)) {
+    const message = cleaned.slice(questionIdx + '[QUESTION]'.length).trim();
+    return { type: 'question', message };
   }
 
+  if (hasResult) {
+    const message = cleaned.slice(resultIdx + '[RESULT]'.length).trim();
+    return { type: 'result', message };
+  }
+
+  // No tags found — return full output as result
   return { type: 'result', message: cleaned.trim() };
 }

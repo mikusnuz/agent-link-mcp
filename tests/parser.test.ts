@@ -59,12 +59,12 @@ describe('parseAgentOutput', () => {
   it('picks first tag when multiple exist', () => {
     const result = parseAgentOutput('[QUESTION] first\n[RESULT] second');
     assert.equal(result.type, 'question');
-    assert.equal(result.message, 'first');
+    assert.equal(result.message, 'first\n[RESULT] second');
   });
 
   it('handles multiline question', () => {
     const result = parseAgentOutput('Some preamble\n[QUESTION] Is this correct?\nMore text');
     assert.equal(result.type, 'question');
-    assert.equal(result.message, 'Is this correct?');
+    assert.equal(result.message, 'Is this correct?\nMore text');
   });
 });
