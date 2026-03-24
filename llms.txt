@@ -5,16 +5,21 @@ MCP server for bidirectional AI agent collaboration. Lets any MCP-compatible age
 ## Tools
 
 ### spawn_agent
-Spawn an AI agent CLI (claude, codex, gemini, aider, or custom) to work on a task. Accepts task description, file context, error messages, working directory, and model selection. Returns the agent's result or a question if clarification is needed. Default timeout: 1 hour.
+Spawn an AI agent CLI (claude, codex, gemini, aider, or custom) to work on a task. Supports model selection, thinking depth, git diff context, auto-retry with escalation. Default timeout: 1 hour.
 
 Parameters:
 - agent (required): Agent name ("claude", "codex", "gemini", "aider")
 - task (required): Task description
-- context: Optional { files, error, intent }
+- context: Optional { files, error, intent, diff }. diff: true includes git diff output, "staged" for staged only.
 - cwd: Working directory for the agent process
 - model: Model to use (e.g. "o3", "gpt-5.4", "claude-sonnet-4", "gemini-2.5-pro"). Passed via --model flag.
 - thinking: Thinking/reasoning depth ("low", "medium", "high", "max"). Claude uses --effort, Codex uses -c reasoning_effort, Aider uses --reasoning-effort.
+- retry: Auto-retry on failure (up to 3 attempts). Default: false.
+- escalate: On retry, automatically increase thinking level. Requires retry: true. Default: false.
 - timeoutMs: Timeout in ms. Default: 3600000 (1 hour).
+
+### spawn_agents
+Run multiple agents in parallel. Each agent runs independently and all results are returned together. Accepts array of agent specs with individual model/thinking/context settings. Great for parallel code reviews, getting multiple opinions, or distributing subtasks.
 
 ### reply
 Continue a conversation with a spawned agent that asked a question. Send your answer and get back the next response.
@@ -49,9 +54,9 @@ Current agent-link configuration and profiles.
 
 ## When to Use
 
-- You've tried to fix a bug twice and keep failing — ask another agent for a fresh perspective
-- You want a code review from a different AI model before merging
+- You've tried to fix a bug twice and keep failing — use retry + escalate, or ask another agent
+- You want parallel code reviews from multiple models — use spawn_agents
+- You want to include current git changes as context — use context.diff
 - You need to leverage different model strengths (Claude for planning, Codex for execution, Gemini for research)
-- You want to parallelize independent subtasks across multiple agents
-- You need rubber-duck debugging — explain the problem to another agent and get a solution back
-- You want to use a specific model (e.g. o3, gpt-5.4) for a task via the model parameter
+- You want to control thinking depth — use the thinking parameter
+- You want auto-retry with increasing reasoning effort — use retry + escalate

@@ -133,16 +133,34 @@ Spawn an agent and send it a task.
 |-----------|------|---------|-------------|
 | `agent` | string | *required* | Agent name (`"claude"`, `"codex"`, `"gemini"`, `"aider"`) |
 | `task` | string | *required* | Task description |
-| `context` | object | — | Optional `{ files, error, intent }` |
+| `context` | object | — | Optional `{ files, error, intent, diff }`. `diff: true` includes `git diff` output. `diff: "staged"` for staged only. |
 | `cwd` | string | cwd | Working directory for the agent process |
 | `model` | string | — | Model to use (e.g. `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). Passed via `--model` flag. |
 | `thinking` | string | — | Thinking/reasoning depth (`"low"`, `"medium"`, `"high"`, `"max"`). Claude: `--effort`, Codex: `-c reasoning_effort`, Aider: `--reasoning-effort`. |
+| `retry` | boolean | false | Auto-retry on failure (up to 3 attempts). |
+| `escalate` | boolean | false | On retry, automatically increase thinking level. Requires `retry: true`. |
 | `timeoutMs` | number | 3600000 | Timeout in ms. Default: **1 hour**. |
 
 Returns one of:
 - `{ status: "done", agentId: "codex-a1b2c3", result: "..." }` — task completed
 - `{ status: "waiting_for_reply", agentId: "codex-a1b2c3", question: "..." }` — agent needs clarification
 - `{ error: "...", agentId: "codex-a1b2c3" }` — something went wrong
+
+### `spawn_agents`
+
+Run multiple agents in parallel. Returns all results together.
+
+```json
+{
+  "agents": [
+    { "agent": "codex", "task": "Review for bugs", "context": { "diff": true } },
+    { "agent": "claude", "task": "Review for security", "context": { "diff": true } }
+  ],
+  "cwd": "/path/to/project"
+}
+```
+
+Returns `{ summary: { total, succeeded, failed, waiting }, results: [...] }`.
 
 ### `reply`
 

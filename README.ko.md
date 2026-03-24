@@ -133,16 +133,34 @@ npx agent-link-mcp
 |---------|------|-------|------|
 | `agent` | string | *필수* | 에이전트 이름 (`"claude"`, `"codex"`, `"gemini"`, `"aider"`) |
 | `task` | string | *필수* | 작업 설명 |
-| `context` | object | — | 선택 `{ files, error, intent }` |
+| `context` | object | — | 선택 `{ files, error, intent, diff }`. `diff: true`는 `git diff` 출력을 포함. `diff: "staged"`는 staged만. |
 | `cwd` | string | cwd | 에이전트 프로세스의 작업 디렉토리 |
 | `model` | string | — | 사용할 모델 (예: `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). `--model` 플래그로 전달됩니다. |
 | `thinking` | string | — | 사고 깊이 (`"low"`, `"medium"`, `"high"`, `"max"`). Claude: `--effort`, Codex: `-c reasoning_effort`, Aider: `--reasoning-effort`. |
+| `retry` | boolean | false | 실패 시 자동 재시도 (최대 3회). |
+| `escalate` | boolean | false | 재시도 시 사고 깊이를 자동으로 높임. `retry: true` 필요. |
 | `timeoutMs` | number | 3600000 | 타임아웃 (ms). 기본값: **1시간**. |
 
 반환값:
 - `{ status: "done", agentId: "codex-a1b2c3", result: "..." }` — 작업 완료
 - `{ status: "waiting_for_reply", agentId: "codex-a1b2c3", question: "..." }` — 에이전트가 추가 정보를 요청함
 - `{ error: "...", agentId: "codex-a1b2c3" }` — 오류 발생
+
+### `spawn_agents`
+
+여러 에이전트를 병렬로 실행합니다. 모든 결과를 함께 반환합니다.
+
+```json
+{
+  "agents": [
+    { "agent": "codex", "task": "버그 리뷰", "context": { "diff": true } },
+    { "agent": "claude", "task": "보안 리뷰", "context": { "diff": true } }
+  ],
+  "cwd": "/path/to/project"
+}
+```
+
+반환값: `{ summary: { total, succeeded, failed, waiting }, results: [...] }`
 
 ### `reply`
 

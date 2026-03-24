@@ -10,8 +10,9 @@ import { registerReply } from './tools/reply.js';
 import { registerKillAgent } from './tools/kill-agent.js';
 import { registerListAgents } from './tools/list-agents.js';
 import { registerGetStatus } from './tools/get-status.js';
+import { registerSpawnAgents } from './tools/spawn-agents.js';
 
-const PKG_VERSION = '0.4.0';
+const PKG_VERSION = '0.5.0';
 
 async function main(): Promise<void> {
   detectAgents();
@@ -25,6 +26,7 @@ async function main(): Promise<void> {
   });
 
   registerSpawnAgent(server, sessionManager);
+  registerSpawnAgents(server, sessionManager);
   registerReply(server, sessionManager);
   registerKillAgent(server, sessionManager);
   registerListAgents(server);
@@ -147,6 +149,7 @@ export function createSandboxServer(): McpServer {
   });
 
   registerSpawnAgent(server, sessionManager);
+  registerSpawnAgents(server, sessionManager);
   registerReply(server, sessionManager);
   registerKillAgent(server, sessionManager);
   registerListAgents(server);

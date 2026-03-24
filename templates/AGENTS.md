@@ -2,20 +2,19 @@
 
 ## Rules
 
-- When you fail to solve the same issue twice, use the `spawn_agent` MCP tool to ask another agent for help.
-- Pass error messages, relevant files, and intent as context.
+- When you fail to solve the same issue twice, use `spawn_agent` with `retry: true, escalate: true` or ask another agent.
+- Pass error messages, relevant files, and intent as context. Use `diff: true` to include git changes.
 - Use `list_agents` to check which agents are available before spawning.
 - If a spawned agent asks a question, answer it with the `reply` tool.
-- For code reviews, spawn a different model than yourself for diverse feedback.
-- Use the `model` parameter to pick which model the agent should use (e.g. `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`).
-- Use the `thinking` parameter to control reasoning depth (`"low"`, `"medium"`, `"high"`, `"max"`).
-- Default timeout is 1 hour. For complex tasks, increase with `timeoutMs`.
+- For parallel reviews, use `spawn_agents` to run multiple agents simultaneously.
+- Use `model` to pick the model, `thinking` to control reasoning depth.
 
 ## Available Tools
 
 | Tool | Purpose |
 |------|---------|
-| `spawn_agent` | Start a task on another agent CLI (supports `model`, `thinking`, `timeoutMs` params) |
+| `spawn_agent` | Start a task on another agent (supports `model`, `thinking`, `retry`, `escalate`, `context.diff`) |
+| `spawn_agents` | Run multiple agents in parallel, get all results together |
 | `reply` | Answer a spawned agent's question |
 | `kill_agent` | Abort a running session |
 | `list_agents` | List available agent CLIs |
