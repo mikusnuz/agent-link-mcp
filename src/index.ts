@@ -12,7 +12,7 @@ import { registerListAgents } from './tools/list-agents.js';
 import { registerGetStatus } from './tools/get-status.js';
 import { registerSpawnAgents } from './tools/spawn-agents.js';
 
-const PKG_VERSION = '0.5.0';
+const PKG_VERSION = '0.5.1';
 
 async function main(): Promise<void> {
   detectAgents();
@@ -145,7 +145,7 @@ export function createSandboxServer(): McpServer {
 
   const server = new McpServer({
     name: 'agent-link-mcp',
-    version: '0.2.0',
+    version: PKG_VERSION,
   });
 
   registerSpawnAgent(server, sessionManager);

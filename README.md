@@ -89,7 +89,7 @@ agent-link-mcp spawns other AI agents as CLI subprocesses. **You need to install
 |-------|---------|------|
 | Claude Code | `npm install -g @anthropic-ai/claude-code` | `claude login` |
 | Codex | `npm install -g @openai/codex` | `codex login` |
-| Gemini CLI | `npm install -g @anthropic-ai/gemini-cli` | `gemini login` |
+| Gemini CLI | `npm install -g @google/gemini-cli` | Run `gemini` and follow the sign-in prompt |
 | Aider | `pip install aider-chat` | Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` |
 
 You only need the ones you plan to use. agent-link-mcp auto-detects which CLIs are installed.
@@ -136,7 +136,7 @@ Spawn an agent and send it a task.
 | `context` | object | — | Optional `{ files, error, intent, diff }`. `diff: true` includes `git diff` output. `diff: "staged"` for staged only. |
 | `cwd` | string | cwd | Working directory for the agent process |
 | `model` | string | — | Model to use (e.g. `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). Passed via `--model` flag. |
-| `thinking` | string | — | Thinking/reasoning depth (`"low"`, `"medium"`, `"high"`, `"max"`). Claude: `--effort`, Codex: `-c reasoning_effort`, Aider: `--reasoning-effort`. |
+| `thinking` | string | — | Thinking/reasoning depth; supported values depend on the selected CLI and model. Claude: `--effort`, Codex: `-c model_reasoning_effort`, Aider: `--reasoning-effort`. |
 | `retry` | boolean | false | Auto-retry on failure (up to 3 attempts). |
 | `escalate` | boolean | false | On retry, automatically increase thinking level. Requires `retry: true`. |
 | `timeoutMs` | number | 3600000 | Timeout in ms. Default: **1 hour**. |
@@ -302,7 +302,7 @@ spawn_agent("claude", "Architect a new auth system", { thinking: "max" })
 | Agent | Flag | Values |
 |-------|------|--------|
 | Claude | `--effort` | `low`, `medium`, `high`, `max` |
-| Codex | `-c reasoning_effort` | `low`, `medium`, `high` |
+| Codex | `-c model_reasoning_effort` | Model-dependent, e.g. `low`, `medium`, `high`, `xhigh` |
 | Aider | `--reasoning-effort` | `low`, `medium`, `high` |
 
 If omitted, the agent uses its default reasoning level.

@@ -89,7 +89,7 @@ agent-link-mcp는 다른 AI 에이전트를 CLI 서브프로세스로 생성합�
 |---------|------|------|
 | Claude Code | `npm install -g @anthropic-ai/claude-code` | `claude login` |
 | Codex | `npm install -g @openai/codex` | `codex login` |
-| Gemini CLI | `npm install -g @anthropic-ai/gemini-cli` | `gemini login` |
+| Gemini CLI | `npm install -g @google/gemini-cli` | `gemini`를 실행하고 로그인 안내를 따릅니다 |
 | Aider | `pip install aider-chat` | `OPENAI_API_KEY` 또는 `ANTHROPIC_API_KEY` 환경변수 설정 |
 
 사용할 에이전트만 설치하면 됩니다. agent-link-mcp가 설치된 CLI를 자동으로 감지합니다.
@@ -136,7 +136,7 @@ npx agent-link-mcp
 | `context` | object | — | 선택 `{ files, error, intent, diff }`. `diff: true`는 `git diff` 출력을 포함. `diff: "staged"`는 staged만. |
 | `cwd` | string | cwd | 에이전트 프로세스의 작업 디렉토리 |
 | `model` | string | — | 사용할 모델 (예: `"o3"`, `"gpt-5.4"`, `"claude-sonnet-4"`, `"gemini-2.5-pro"`). `--model` 플래그로 전달됩니다. |
-| `thinking` | string | — | 사고 깊이 (`"low"`, `"medium"`, `"high"`, `"max"`). Claude: `--effort`, Codex: `-c reasoning_effort`, Aider: `--reasoning-effort`. |
+| `thinking` | string | — | 사고 깊이. 지원 값은 선택한 CLI와 모델에 따라 다릅니다. Claude: `--effort`, Codex: `-c model_reasoning_effort`, Aider: `--reasoning-effort`. |
 | `retry` | boolean | false | 실패 시 자동 재시도 (최대 3회). |
 | `escalate` | boolean | false | 재시도 시 사고 깊이를 자동으로 높임. `retry: true` 필요. |
 | `timeoutMs` | number | 3600000 | 타임아웃 (ms). 기본값: **1시간**. |
@@ -302,7 +302,7 @@ spawn_agent("claude", "Architect a new auth system", { thinking: "max" })
 | 에이전트 | 플래그 | 값 |
 |---------|-------|-----|
 | Claude | `--effort` | `low`, `medium`, `high`, `max` |
-| Codex | `-c reasoning_effort` | `low`, `medium`, `high` |
+| Codex | `-c model_reasoning_effort` | 모델별로 다름. 예: `low`, `medium`, `high`, `xhigh` |
 | Aider | `--reasoning-effort` | `low`, `medium`, `high` |
 
 생략하면 에이전트의 기본 사고 수준이 사용됩니다.

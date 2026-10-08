@@ -1,8 +1,4 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import { writeFile, unlink } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { randomBytes } from 'node:crypto';
 import { AgentProfile } from './agent-registry.js';
 
 export interface RunOptions {
@@ -45,13 +41,7 @@ export function killProcess(pid: number): void {
   }, 200);
 }
 
-async function writeTempPrompt(prompt: string): Promise<string> {
-  const tmpFile = join(tmpdir(), `agent-link-${randomBytes(8).toString('hex')}.txt`);
-  await writeFile(tmpFile, prompt, 'utf8');
-  return tmpFile;
-}
-
-function buildArgs(profile: AgentProfile, prompt: string, model?: string, thinking?: string): string[] {
+export function buildArgs(profile: AgentProfile, prompt: string, model?: string, thinking?: string): string[] {
   const args = [...profile.args];
 
   if (model && profile.modelFlag) {
@@ -60,7 +50,7 @@ function buildArgs(profile: AgentProfile, prompt: string, model?: string, thinki
 
   if (thinking && profile.thinkingFlag) {
     if (profile.thinkingFormat === 'config') {
-      // codex style: -c reasoning_effort="high"
+      // Codex configuration override; quote the value as a TOML string.
       args.push('-c', `${profile.thinkingFlag}="${thinking}"`);
     } else {
       // flag style: --effort high
@@ -83,8 +73,6 @@ export async function runAgent(
   prompt: string,
   options: RunOptions
 ): Promise<RunResult> {
-  const tmpFile = await writeTempPrompt(prompt);
-
   const args = buildArgs(profile, prompt, options.model, options.thinking);
 
   let child: ChildProcess;
@@ -96,7 +84,6 @@ export async function runAgent(
       env: { ...process.env },
     });
   } catch (err) {
-    await unlink(tmpFile).catch(() => undefined);
     throw new Error(
       `Failed to spawn agent process "${profile.command}": ${err instanceof Error ? err.message : String(err)}`
     );
@@ -165,8 +152,6 @@ export async function runAgent(
       resolve(null);
     });
   });
-
-  await unlink(tmpFile).catch(() => undefined);
 
   const stdout = Buffer.concat(stdoutChunks).toString('utf8');
   const stderr = Buffer.concat(stderrChunks).toString('utf8');

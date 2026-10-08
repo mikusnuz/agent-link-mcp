@@ -43,7 +43,7 @@ const BUILT_IN_PROFILES: Record<string, AgentProfile> = {
     promptMode: 'arg',
     outputFormat: 'text',
     modelFlag: '--model',
-    thinkingFlag: 'reasoning_effort',
+    thinkingFlag: 'model_reasoning_effort',
     thinkingFormat: 'config',
   },
   gemini: {
