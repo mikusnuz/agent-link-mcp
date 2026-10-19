@@ -12,7 +12,7 @@ import { registerListAgents } from './tools/list-agents.js';
 import { registerGetStatus } from './tools/get-status.js';
 import { registerSpawnAgents } from './tools/spawn-agents.js';
 
-const PKG_VERSION = '0.5.1';
+const PKG_VERSION = '0.5.2';
 
 async function main(): Promise<void> {
   detectAgents();
@@ -123,9 +123,11 @@ async function main(): Promise<void> {
 
   const transport = new StdioServerTransport();
 
+  let shuttingDown = false;
   const shutdown = (): void => {
-    sessionManager.cleanupAll();
-    process.exit(0);
+    if (shuttingDown) return;
+    shuttingDown = true;
+    void sessionManager.cleanupAll().finally(() => process.exit(0));
   };
 
   process.on('SIGTERM', shutdown);

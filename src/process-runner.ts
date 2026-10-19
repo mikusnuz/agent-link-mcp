@@ -6,6 +6,9 @@ export interface RunOptions {
   timeoutMs: number;
   model?: string;
   thinking?: string;
+  signal?: AbortSignal;
+  onSpawn?: (pid: number) => void;
+  killGraceMs?: number;
 }
 
 export interface RunResult {
@@ -13,155 +16,108 @@ export interface RunResult {
   stderr: string;
   exitCode: number | null;
   timedOut: boolean;
+  cancelled: boolean;
 }
 
-export function killProcess(pid: number): void {
+function signalChild(child: ChildProcess, signal: NodeJS.Signals): void {
+  if (child.pid === undefined) return;
   try {
-    process.kill(pid, 'SIGTERM');
+    if (process.platform === 'win32') {
+      const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', ...(signal === 'SIGKILL' ? ['/F'] : [])], { stdio: 'ignore' });
+      killer.on('error', () => { child.kill(signal); });
+    } else {
+      process.kill(-child.pid, signal);
+    }
   } catch {
-    return;
+    // The child may already have exited.
   }
-
-  const deadline = Date.now() + 5000;
-  const interval = setInterval(() => {
-    if (Date.now() >= deadline) {
-      clearInterval(interval);
-      try {
-        process.kill(pid, 'SIGKILL');
-      } catch {
-        // already gone
-      }
-      return;
-    }
-    try {
-      process.kill(pid, 0);
-    } catch {
-      clearInterval(interval);
-    }
-  }, 200);
 }
 
 export function buildArgs(profile: AgentProfile, prompt: string, model?: string, thinking?: string): string[] {
   const args = [...profile.args];
-
-  if (model && profile.modelFlag) {
-    args.push(profile.modelFlag, model);
-  }
-
+  if (model && profile.modelFlag) args.push(profile.modelFlag, model);
   if (thinking && profile.thinkingFlag) {
-    if (profile.thinkingFormat === 'config') {
-      // Codex configuration override; quote the value as a TOML string.
-      args.push('-c', `${profile.thinkingFlag}="${thinking}"`);
-    } else {
-      // flag style: --effort high
-      args.push(profile.thinkingFlag, thinking);
-    }
+    if (profile.thinkingFormat === 'config') args.push('-c', `${profile.thinkingFlag}="${thinking}"`);
+    else args.push(profile.thinkingFlag, thinking);
   }
-
   if (profile.promptMode === 'arg') {
-    if (profile.promptFlag !== null) {
-      args.push(profile.promptFlag);
-    }
+    if (profile.promptFlag !== null) args.push(profile.promptFlag);
     args.push(prompt);
   }
-
   return args;
 }
 
-export async function runAgent(
-  profile: AgentProfile,
-  prompt: string,
-  options: RunOptions
-): Promise<RunResult> {
-  const args = buildArgs(profile, prompt, options.model, options.thinking);
-
-  let child: ChildProcess;
-
-  try {
-    child = spawn(profile.command, args, {
-      cwd: options.cwd,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
-    });
-  } catch (err) {
-    throw new Error(
-      `Failed to spawn agent process "${profile.command}": ${err instanceof Error ? err.message : String(err)}`
-    );
+export async function runAgent(profile: AgentProfile, prompt: string, options: RunOptions): Promise<RunResult> {
+  if (options.signal?.aborted) {
+    return { stdout: '', stderr: '', exitCode: null, timedOut: false, cancelled: true };
   }
-
-  if (profile.promptMode === 'stdin' && child.stdin) {
-    child.stdin.write(prompt, 'utf8');
-    child.stdin.end();
-  } else if (child.stdin) {
-    child.stdin.end();
-  }
-
+  const child = spawn(profile.command, buildArgs(profile, prompt, options.model, options.thinking), {
+    cwd: options.cwd,
+    stdio: ['pipe', 'pipe', 'pipe'],
+    env: { ...process.env },
+    detached: process.platform !== 'win32',
+  });
   const stdoutChunks: Buffer[] = [];
   const stderrChunks: Buffer[] = [];
-
-  child.stdout?.on('data', (chunk: Buffer) => {
-    stdoutChunks.push(chunk);
-  });
-
-  child.stderr?.on('data', (chunk: Buffer) => {
-    stderrChunks.push(chunk);
-  });
-
+  child.stdout?.on('data', (chunk: Buffer) => stdoutChunks.push(chunk));
+  child.stderr?.on('data', (chunk: Buffer) => stderrChunks.push(chunk));
+  child.stdin?.on('error', () => { /* A cancelled child may close stdin early. */ });
   let timedOut = false;
-  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  let cancelled = false;
+  let stopping = false;
+  let escalation: ReturnType<typeof setTimeout> | undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
 
   const exitCode = await new Promise<number | null>((resolve) => {
-    timeoutHandle = setTimeout(() => {
-      timedOut = true;
-
-      const pid = child.pid;
-      if (pid === undefined) {
-        resolve(null);
-        return;
-      }
-
-      try {
-        process.kill(pid, 'SIGTERM');
-      } catch {
-        resolve(null);
-        return;
-      }
-
-      setTimeout(() => {
-        try {
-          process.kill(pid, 'SIGKILL');
-        } catch {
-          // already gone
-        }
-        resolve(null);
-      }, 5000);
-    }, options.timeoutMs);
-
-    child.on('close', (code) => {
-      if (timeoutHandle !== undefined) {
-        clearTimeout(timeoutHandle);
-      }
-      resolve(code);
+    let closed = false;
+    let closedCode: number | null = null;
+    let forced = false;
+    let poll: ReturnType<typeof setInterval> | undefined;
+    const groupAlive = () => {
+      if (process.platform === 'win32' || child.pid === undefined) return false;
+      try { process.kill(-child.pid, 0); return true; } catch { return false; }
+    };
+    const finish = () => {
+      if (!closed || (stopping && !forced && groupAlive())) return;
+      if (timeout) clearTimeout(timeout);
+      if (escalation) clearTimeout(escalation);
+      if (poll) clearInterval(poll);
+      options.signal?.removeEventListener('abort', abort);
+      resolve(closedCode);
+    };
+    const stop = (reason: 'timeout' | 'cancel') => {
+      if (stopping) return;
+      stopping = true;
+      timedOut = reason === 'timeout';
+      cancelled = reason === 'cancel';
+      signalChild(child, 'SIGTERM');
+      poll = setInterval(finish, 50);
+      escalation = setTimeout(() => {
+        signalChild(child, 'SIGKILL');
+        forced = true;
+        finish();
+      }, options.killGraceMs ?? 5000);
+    };
+    const abort = () => stop('cancel');
+    child.on('error', (err) => stderrChunks.push(Buffer.from(err.message)));
+    child.once('close', (code) => {
+      closed = true;
+      closedCode = code;
+      finish();
     });
-
-    child.on('error', (err) => {
-      if (timeoutHandle !== undefined) {
-        clearTimeout(timeoutHandle);
-      }
-      stderrChunks.push(Buffer.from(err.message, 'utf8'));
-      resolve(null);
+    child.once('spawn', () => {
+      if (child.pid !== undefined) options.onSpawn?.(child.pid);
     });
+    timeout = setTimeout(() => stop('timeout'), options.timeoutMs);
+    options.signal?.addEventListener('abort', abort, { once: true });
+    if (options.signal?.aborted) abort();
+    if (profile.promptMode === 'stdin') child.stdin?.end(prompt, 'utf8');
+    else child.stdin?.end();
   });
-
   const stdout = Buffer.concat(stdoutChunks).toString('utf8');
   const stderr = Buffer.concat(stderrChunks).toString('utf8');
-
-  if (!timedOut && exitCode !== 0) {
-    const detail = stderr.trim() || '(no stderr output)';
-    throw new Error(
-      `Agent process exited with code ${exitCode ?? 'null'}.\nstderr: ${detail}`
-    );
+  if (!timedOut && !cancelled && exitCode !== 0) {
+    throw new Error(`Agent process exited with code ${exitCode ?? 'null'}.\nstderr: ${stderr.trim() || '(no stderr output)'}`);
   }
-
-  return { stdout, stderr, exitCode, timedOut };
+  return { stdout, stderr, exitCode, timedOut, cancelled };
 }

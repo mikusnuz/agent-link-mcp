@@ -62,10 +62,10 @@ describe('SessionManager', () => {
     assert.equal(manager.getAllSessions().length, 2);
   });
 
-  it('cleanupAll clears all sessions', () => {
+  it('cleanupAll clears all sessions', async () => {
     manager.createSession('codex', 1800);
     manager.createSession('claude', 1800);
-    manager.cleanupAll();
+    await manager.cleanupAll();
     assert.equal(manager.getAllSessions().length, 0);
   });
 });

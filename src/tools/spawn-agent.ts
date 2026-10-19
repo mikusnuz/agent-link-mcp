@@ -1,11 +1,13 @@
 import fs from 'fs';
+import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAgentProfile, type AgentProfile } from '../agent-registry.js';
-import { SessionManager } from '../session-manager.js';
+import { SessionManager, type Session } from '../session-manager.js';
 import { readFileContents, buildInitialPrompt, type TaskContext } from '../prompt-builder.js';
-import { runAgent, type RunResult } from '../process-runner.js';
+import { type RunResult } from '../process-runner.js';
+import { runSessionAgent } from '../session-runner.js';
 import { parseAgentOutput, type ParsedResponse } from '../parser.js';
 
 const DEFAULT_TIMEOUT_MS = 3_600_000;
@@ -23,7 +25,7 @@ function validateCwd(rawCwd: string | undefined): { cwd: string; error?: undefin
     if (!stat.isDirectory()) {
       return { error: `Invalid cwd: "${rawCwd}" is not a directory.` };
     }
-    return { cwd: rawCwd };
+    return { cwd: resolve(rawCwd) };
   } catch {
     return { error: `Invalid cwd: "${rawCwd}" does not exist.` };
   }
@@ -55,18 +57,19 @@ function errorResponse(msg: string, extra?: Record<string, unknown>) {
 async function executeAgent(
   profile: AgentProfile,
   prompt: string,
-  options: { cwd: string; timeoutMs: number; model?: string; thinking?: string },
+  manager: SessionManager,
+  session: Session,
+  thinking?: string,
 ): Promise<{ result: RunResult; parsed: ParsedResponse } | { error: string }> {
   let result: RunResult;
   try {
-    result = await runAgent(profile, prompt, options);
+    result = await runSessionAgent(manager, session, profile, prompt, { thinking });
+    if (result.cancelled || session.status === 'cancelled') return { error: 'Agent session was cancelled.' };
+    if (result.timedOut) return { error: `Agent timed out after ${session.timeout}ms` };
+    return { result, parsed: parseAgentOutput(result.stdout, profile.outputFormat) };
   } catch (err) {
     return { error: `Agent process failed: ${err instanceof Error ? err.message : String(err)}` };
   }
-  if (result.timedOut) {
-    return { error: `Agent timed out after ${options.timeoutMs}ms` };
-  }
-  return { result, parsed: parseAgentOutput(result.stdout) };
 }
 
 export function registerSpawnAgent(server: McpServer, sessionManager: SessionManager): void {
@@ -108,7 +111,7 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
       const profile = getAgentProfile(agent);
       if (!profile) return errorResponse(`Agent "${agent}" not found. Use list_agents to see available agents.`);
 
-      const session = sessionManager.createSession(agent, timeoutMs, model, thinking);
+      const session = sessionManager.createSession(agent, timeoutMs, model, thinking, cwd);
 
       let taskContext: TaskContext = {};
 
@@ -139,14 +142,18 @@ export function registerSpawnAgent(server: McpServer, sessionManager: SessionMan
       }
 
       const prompt = buildInitialPrompt(task, taskContext);
+      sessionManager.addConversation(session.agentId, { role: 'host', message: prompt });
 
       let currentThinking = thinking;
       const maxAttempts = retry ? 3 : 1;
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const execResult = await executeAgent(profile, prompt, { cwd, timeoutMs, model, thinking: currentThinking });
+        if (session.status === 'cancelled') return errorResponse('Agent session was cancelled.', { agentId: session.agentId });
+        session.thinking = currentThinking;
+        const execResult = await executeAgent(profile, prompt, sessionManager, session, currentThinking);
 
         if ('error' in execResult) {
+          if (sessionManager.isCancelled(session.agentId)) return errorResponse('Agent session was cancelled.', { agentId: session.agentId });
           if (attempt < maxAttempts - 1) {
             if (escalate) currentThinking = escalateThinking(currentThinking);
             continue;

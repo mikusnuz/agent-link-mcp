@@ -1,11 +1,12 @@
 import fs from 'fs';
+import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAgentProfile } from '../agent-registry.js';
 import { SessionManager } from '../session-manager.js';
 import { readFileContents, buildInitialPrompt, type TaskContext } from '../prompt-builder.js';
-import { runAgent } from '../process-runner.js';
+import { runSessionAgent } from '../session-runner.js';
 import { parseAgentOutput } from '../parser.js';
 
 const DEFAULT_TIMEOUT_MS = 3_600_000;
@@ -58,7 +59,7 @@ export function registerSpawnAgents(server: McpServer, sessionManager: SessionMa
               isError: true,
             };
           }
-          cwd = rawCwd;
+          cwd = resolve(rawCwd);
         } catch {
           return {
             content: [{ type: 'text' as const, text: JSON.stringify({ error: `Invalid cwd: "${rawCwd}" does not exist.` }) }],
@@ -73,7 +74,7 @@ export function registerSpawnAgents(server: McpServer, sessionManager: SessionMa
           return { agent: spec.agent, status: 'error' as const, error: `Agent "${spec.agent}" not found.` };
         }
 
-        const session = sessionManager.createSession(spec.agent, timeoutMs, spec.model, spec.thinking);
+        const session = sessionManager.createSession(spec.agent, timeoutMs, spec.model, spec.thinking, cwd);
 
         let taskContext: TaskContext = {};
         if (spec.context) {
@@ -103,9 +104,13 @@ export function registerSpawnAgents(server: McpServer, sessionManager: SessionMa
         }
 
         const prompt = buildInitialPrompt(spec.task, taskContext);
+        sessionManager.addConversation(session.agentId, { role: 'host', message: prompt });
 
         try {
-          const result = await runAgent(profile, prompt, { cwd, timeoutMs, model: spec.model, thinking: spec.thinking });
+          const result = await runSessionAgent(sessionManager, session, profile, prompt);
+          if (result.cancelled || session.status === 'cancelled') {
+            return { agent: spec.agent, agentId: session.agentId, status: 'cancelled' as const, error: 'Agent session was cancelled.' };
+          }
 
           if (result.timedOut) {
             sessionManager.updateStatus(session.agentId, 'error');
@@ -113,7 +118,7 @@ export function registerSpawnAgents(server: McpServer, sessionManager: SessionMa
             return { agent: spec.agent, agentId: session.agentId, status: 'timeout' as const, error: `Timed out after ${timeoutMs}ms` };
           }
 
-          const parsed = parseAgentOutput(result.stdout);
+          const parsed = parseAgentOutput(result.stdout, profile.outputFormat);
 
           if (parsed.type === 'question') {
             sessionManager.updateStatus(session.agentId, 'waiting_for_reply');
@@ -133,7 +138,7 @@ export function registerSpawnAgents(server: McpServer, sessionManager: SessionMa
 
       const results = await Promise.all(promises);
       const succeeded = results.filter(r => r.status === 'done').length;
-      const failed = results.filter(r => r.status === 'error' || r.status === 'timeout').length;
+      const failed = results.filter(r => r.status === 'error' || r.status === 'timeout' || r.status === 'cancelled').length;
       const waiting = results.filter(r => r.status === 'waiting_for_reply').length;
 
       return {

@@ -1,6 +1,6 @@
 {
   "name": "agent-link-mcp",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "MCP server for bidirectional AI agent collaboration — spawn and communicate with any AI coding agent CLI",
   "main": "dist/index.js",
   "bin": {
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "zod": "^4.3.6"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

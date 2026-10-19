@@ -9,8 +9,23 @@ export function stripAnsi(text: string): string {
   return text.replace(ANSI_PATTERN, '');
 }
 
-export function parseAgentOutput(output: string): ParsedResponse {
-  const cleaned = stripAnsi(output);
+export function parseAgentOutput(output: string, format: 'text' | 'json' = 'text'): ParsedResponse {
+  let text = output;
+  if (format === 'json') {
+    let envelope: unknown;
+    try { envelope = JSON.parse(stripAnsi(output)); }
+    catch { throw new Error('Agent returned invalid JSON output.'); }
+    if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) {
+      throw new Error('Agent JSON output must be a result object.');
+    }
+    const result = envelope as { result?: unknown; is_error?: boolean; subtype?: string };
+    if (result.is_error || (result.subtype && result.subtype.startsWith('error'))) {
+      throw new Error(typeof result.result === 'string' ? result.result : 'Agent reported an unsuccessful result.');
+    }
+    if (typeof result.result !== 'string') throw new Error('Agent JSON output is missing a text result.');
+    text = result.result;
+  }
+  const cleaned = stripAnsi(text);
 
   // Find the first [QUESTION] or [RESULT] tag and return everything after it
   const questionIdx = cleaned.indexOf('[QUESTION]');

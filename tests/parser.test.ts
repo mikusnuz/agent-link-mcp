@@ -21,6 +21,18 @@ describe('stripAnsi', () => {
 });
 
 describe('parseAgentOutput', () => {
+  it('unwraps Claude JSON without leaking metadata or escaped text', () => {
+    const message = 'Done\n"quoted" \\path';
+    assert.deepEqual(parseAgentOutput(JSON.stringify({ type: 'result', result: `[RESULT] ${message}`, session_id: 'private-session', total_cost_usd: 1 }), 'json'), { type: 'result', message });
+    assert.deepEqual(parseAgentOutput(JSON.stringify({ result: '[QUESTION] Which project?\nPlease clarify.' }), 'json'), { type: 'question', message: 'Which project?\nPlease clarify.' });
+  });
+
+  it('rejects malformed or unsuccessful JSON envelopes instead of treating them as success', () => {
+    for (const output of ['broken', '[]', '{}', '{"is_error":true,"result":"failed"}', '{"subtype":"error_max_turns","result":"incomplete"}']) {
+      assert.throws(() => parseAgentOutput(output, 'json'));
+    }
+  });
+
   it('detects [QUESTION] prefix', () => {
     const result = parseAgentOutput('[QUESTION] What is the intent?');
     assert.equal(result.type, 'question');

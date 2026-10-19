@@ -3,7 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getAgentProfile } from '../agent-registry.js';
 import { SessionManager } from '../session-manager.js';
 import { buildReplyPrompt } from '../prompt-builder.js';
-import { runAgent } from '../process-runner.js';
+import { runSessionAgent } from '../session-runner.js';
 import { parseAgentOutput } from '../parser.js';
 
 export function registerReply(server: McpServer, sessionManager: SessionManager): void {
@@ -50,10 +50,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
         };
       }
 
-      sessionManager.addConversation(agentId, { role: 'host', message });
-
-      const updatedSession = sessionManager.getSession(agentId)!;
-      const prompt = buildReplyPrompt(updatedSession.conversation, message);
+      const prompt = buildReplyPrompt(session.conversation, message);
 
       const profile = getAgentProfile(session.agent);
       if (!profile) {
@@ -73,10 +70,16 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
       }
 
       sessionManager.updateStatus(agentId, 'working');
+      sessionManager.addConversation(agentId, { role: 'host', message });
 
       let result;
+      let parsed;
       try {
-        result = await runAgent(profile, prompt, { timeoutMs: session.timeout, model: session.model, thinking: session.thinking });
+        result = await runSessionAgent(sessionManager, session, profile, prompt);
+        if (result.cancelled || sessionManager.isCancelled(agentId)) {
+          return { content: [{ type: 'text' as const, text: JSON.stringify({ error: 'Agent session was cancelled.', agentId }) }], isError: true };
+        }
+        if (!result.timedOut) parsed = parseAgentOutput(result.stdout, profile.outputFormat);
       } catch (err) {
         sessionManager.updateStatus(agentId, 'error');
         return {
@@ -109,11 +112,9 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
         };
       }
 
-      const parsed = parseAgentOutput(result.stdout);
-
-      if (parsed.type === 'question') {
+      if (parsed!.type === 'question') {
         sessionManager.updateStatus(agentId, 'waiting_for_reply');
-        sessionManager.addConversation(agentId, { role: 'agent', message: parsed.message });
+        sessionManager.addConversation(agentId, { role: 'agent', message: parsed!.message });
 
         return {
           content: [
@@ -122,7 +123,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
               text: JSON.stringify({
                 agentId,
                 status: 'waiting_for_reply',
-                question: parsed.message,
+                question: parsed!.message,
               }),
             },
           ],
@@ -130,7 +131,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
       }
 
       sessionManager.updateStatus(agentId, 'done');
-      sessionManager.addConversation(agentId, { role: 'agent', message: parsed.message });
+      sessionManager.addConversation(agentId, { role: 'agent', message: parsed!.message });
 
       return {
         content: [
@@ -139,7 +140,7 @@ export function registerReply(server: McpServer, sessionManager: SessionManager)
             text: JSON.stringify({
               agentId,
               status: 'done',
-              result: parsed.message,
+              result: parsed!.message,
             }),
           },
         ],

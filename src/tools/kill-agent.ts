@@ -31,7 +31,7 @@ export function registerKillAgent(server: McpServer, sessionManager: SessionMana
         };
       }
 
-      const killed = sessionManager.killSession(agentId);
+      const killed = await sessionManager.killSession(agentId);
       sessionManager.removeSession(agentId);
 
       return {

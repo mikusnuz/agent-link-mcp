@@ -23,9 +23,11 @@ Run multiple agents in parallel. Each agent runs independently and all results a
 
 ### reply
 Continue a conversation with a spawned agent that asked a question. Send your answer and get back the next response.
+Replies replay the original task/context and conversation in the original working directory using a fresh CLI invocation. They do not resume a provider-side session. Concurrent replies are rejected; sessions exist only until server restart.
 
 ### kill_agent
 Abort a running agent session by ID.
+Waits for process termination, escalating after five seconds if necessary. Active PIDs are cleared after each invocation; shutdown cancels active processes too.
 
 ### list_agents
 List all configured agent CLIs and their availability on the system. Auto-detects installed CLIs.

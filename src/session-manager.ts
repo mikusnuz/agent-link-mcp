@@ -4,19 +4,29 @@ import { ConversationEntry } from './prompt-builder.js';
 export interface Session {
   agentId: string;
   agent: string;
-  status: 'working' | 'waiting_for_reply' | 'done' | 'error';
+  status: 'working' | 'waiting_for_reply' | 'done' | 'error' | 'cancelled';
   conversation: ConversationEntry[];
   startedAt: Date;
   pid?: number;
   timeout: number;
   model?: string;
   thinking?: string;
+  cwd: string;
+}
+
+interface ActiveRun {
+  controller: AbortController;
+  done: Promise<void>;
+  resolve: () => void;
 }
 
 export class SessionManager {
   private sessions: Map<string, Session> = new Map();
+  private runs: Map<string, ActiveRun> = new Map();
+  private shuttingDown = false;
 
-  createSession(agent: string, timeout: number, model?: string, thinking?: string): Session {
+  createSession(agent: string, timeout: number, model?: string, thinking?: string, cwd = process.cwd()): Session {
+    if (this.shuttingDown) throw new Error('Agent server is shutting down.');
     const agentId = `${agent}-${randomBytes(3).toString('hex')}`;
     const session: Session = {
       agentId,
@@ -27,6 +37,7 @@ export class SessionManager {
       timeout,
       model,
       thinking,
+      cwd,
     };
     this.sessions.set(agentId, session);
     return session;
@@ -34,6 +45,11 @@ export class SessionManager {
 
   getSession(agentId: string): Session | undefined {
     return this.sessions.get(agentId);
+  }
+
+  isCancelled(agentId: string): boolean {
+    const session = this.sessions.get(agentId);
+    return !session || session.status === 'cancelled';
   }
 
   updateStatus(agentId: string, status: Session['status']): void {
@@ -57,6 +73,27 @@ export class SessionManager {
     }
   }
 
+  beginRun(agentId: string): AbortSignal {
+    if (this.shuttingDown) throw new Error('Agent server is shutting down.');
+    const session = this.sessions.get(agentId);
+    if (!session || session.status === 'cancelled') throw new Error('Agent session has been cancelled.');
+    if (this.runs.has(agentId)) throw new Error('Agent session is already running.');
+    let resolve!: () => void;
+    const done = new Promise<void>((complete) => { resolve = complete; });
+    const run = { controller: new AbortController(), done, resolve };
+    this.runs.set(agentId, run);
+    session.status = 'working';
+    return run.controller.signal;
+  }
+
+  endRun(agentId: string): void {
+    const run = this.runs.get(agentId);
+    this.runs.delete(agentId);
+    const session = this.sessions.get(agentId);
+    if (session) delete session.pid;
+    run?.resolve();
+  }
+
   removeSession(agentId: string): void {
     this.sessions.delete(agentId);
   }
@@ -65,29 +102,20 @@ export class SessionManager {
     return Array.from(this.sessions.values());
   }
 
-  killSession(agentId: string): boolean {
+  async killSession(agentId: string): Promise<boolean> {
     const session = this.sessions.get(agentId);
-    if (!session || session.pid === undefined) {
-      return false;
-    }
-    try {
-      process.kill(session.pid, 'SIGTERM');
-      return true;
-    } catch {
-      return false;
-    }
+    if (!session) return false;
+    session.status = 'cancelled';
+    const run = this.runs.get(agentId);
+    if (!run) return false;
+    run.controller.abort();
+    await run.done;
+    return true;
   }
 
-  cleanupAll(): void {
-    for (const session of this.sessions.values()) {
-      if (session.pid !== undefined) {
-        try {
-          process.kill(session.pid, 'SIGTERM');
-        } catch {
-          // already terminated, ignore
-        }
-      }
-    }
+  async cleanupAll(): Promise<void> {
+    this.shuttingDown = true;
+    await Promise.all([...this.sessions.keys()].map((id) => this.killSession(id)));
     this.sessions.clear();
   }
 }

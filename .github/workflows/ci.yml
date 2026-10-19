@@ -1,14 +1,15 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    timeout-minutes: 15
     strategy:
       matrix:
         node-version: [18, 20, 22]

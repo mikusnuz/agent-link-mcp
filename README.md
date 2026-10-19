@@ -9,6 +9,8 @@ MCP server for bidirectional AI agent collaboration. Spawn and communicate with 
 
 ## When to Use
 
+Version 0.5.2 fixes Claude JSON response parsing, preserves the original task/context and working directory across replies, and connects cancellation to the running process. `reply` starts a fresh CLI invocation with the recorded conversation; it does not resume a provider-side session. Concurrent replies to the same session are rejected. `kill_agent` waits for termination, escalating after five seconds if needed; server shutdown also cancels active children. Sessions are held in memory and do not survive server restarts.
+
 - **Stuck on a bug?** — Your agent tried twice and failed. Let it ask another agent for a fresh perspective.
 - **Need a second opinion?** — Get code review or architectural advice from a different AI model.
 - **Cross-model strengths** — Use Claude for planning, Codex for execution, Gemini for research.
@@ -237,6 +239,8 @@ Claude Code receives the result and continues working
 
 ## Configuration
 
+Custom profiles using `outputFormat: "json"` must emit a single result object with a string `result` field (the Claude print-mode format). `is_error: true` or an error `subtype` is treated as failure; metadata is not included in the conversation.
+
 ### Auto-detection
 
 agent-link-mcp automatically detects installed agent CLIs:
@@ -324,6 +328,10 @@ Spawned agents receive instructions to format their responses:
 - `[RESULT] ...` — task completed
 
 If the agent doesn't follow the format, the entire output is treated as a result.
+
+## Development
+
+Run `npm ci`, `npm run build`, and `npm test` locally. Tests use offline Node.js fixtures and do not call model providers. CI is manual (`workflow_dispatch`) and requires an available self-hosted runner; pushes and pull requests do not start GitHub-hosted jobs.
 
 ## License
 
