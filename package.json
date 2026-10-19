@@ -1,6 +1,6 @@
 {
   "name": "agent-link-mcp",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "MCP server for bidirectional AI agent collaboration — spawn and communicate with any AI coding agent CLI",
   "main": "dist/index.js",
   "bin": {
@@ -40,10 +40,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mikusnuz/agent-link-mcp"
+    "url": "git+https://github.com/mikusnuz/agent-link-mcp.git"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

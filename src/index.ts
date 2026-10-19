@@ -12,7 +12,7 @@ import { registerListAgents } from './tools/list-agents.js';
 import { registerGetStatus } from './tools/get-status.js';
 import { registerSpawnAgents } from './tools/spawn-agents.js';
 
-const PKG_VERSION = '0.5.2';
+const PKG_VERSION = '0.5.3';
 
 async function main(): Promise<void> {
   detectAgents();

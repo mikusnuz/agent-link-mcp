@@ -85,6 +85,8 @@ AI coding agents get stuck sometimes. Instead of waiting for you, they can ask a
 
 ## Prerequisites
 
+Requires Node.js 20 or later, including the MCP host's `npx` environment. Agent CLIs may have additional requirements of their own.
+
 agent-link-mcp spawns other AI agents as CLI subprocesses. **You need to install and authenticate the agent CLIs you want to collaborate with:**
 
 | Agent | Install | Auth |

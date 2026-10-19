@@ -2,6 +2,8 @@
 
 MCP server for bidirectional AI agent collaboration. Lets any MCP-compatible agent spawn and communicate with other AI coding agent CLIs.
 
+Requires Node.js 20 or later, including the MCP host's runtime. Agent CLIs may have additional requirements.
+
 ## Tools
 
 ### spawn_agent
